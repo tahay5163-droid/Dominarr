@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DOMİNAR SEFİRİ</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#040404;--card:#0c0c0e;--tx:#f5f5f0;--mut:#8d8e85;--bd:#222226;--ac:#d9ff1f;--ac-glow:rgba(217,255,31,.45);
+  --fh:Orbitron,"Arial Black",system-ui,sans-serif
+}
+body.beast{--ac:#ff2a4b;--ac-glow:rgba(255,42,75,.55)}
+html{scroll-padding-top:20px;scroll-behavior:smooth}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px));transition:background .5s}
+button{font:inherit;cursor:pointer}
+h1,h2,h3{font-family:var(--fh)}
+
+/* Üst İlerleme Çizgisi */
+#pg{position:fixed;left:0;top:0;height:3px;width:0;background:var(--ac);z-index:80;box-shadow:0 0 18px var(--ac);transition:background .4s}
+
+/* YENİLİKÇİ HARF ATEŞLEMELİ AÇILIŞ EKRANI */
+#intro{position:fixed;inset:0;z-index:75;display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:all;overflow:hidden}
+.door{position:absolute;left:0;width:100%;height:50%;background:#030304;transition:transform .95s cubic-bezier(.77,0,.18,1);z-index:1}
+.door.top{top:0;border-bottom:1px solid rgba(217,255,31,.15)}
+.door.bot{bottom:0;border-top:1px solid rgba(217,255,31,.15)}
+#intro.open .door.top{transform:translateY(-102%)}
+#intro.open .door.bot{transform:translateY(102%)}
+#intro.open{pointer-events:none}
+
+.ign-wrap{position:relative;z-index:2;text-align:center;padding:0 16px;transition:opacity .4s,transform .5s}
+#intro.open .ign-wrap{opacity:0;transform:scale(1.12)}
+.ign-sub{font-family:var(--fh);font-size:11px;letter-spacing:.35em;color:var(--mut);margin-bottom:18px;text-transform:uppercase}
+.word-row{display:flex;justify-content:center;flex-wrap:wrap;gap:4px;margin:4px 0}
+.ch{
+  font-family:var(--fh);font-size:clamp(28px,8.5vw,62px);font-weight:900;
+  color:#1a1a1e;display:inline-block;transform:translateY(14px) scale(.85);
+  transition:color .18s,text-shadow .25s,transform .25s cubic-bezier(.2,1.5,.4,1)
+}
+.ch.lit{
+  color:var(--ac);transform:translateY(0) scale(1);
+  text-shadow:0 0 22px var(--ac-glow),0 0 45px var(--ac-glow)
+}
+.ch.wht.lit{color:#fff;text-shadow:0 0 20px rgba(255,255,255,.5)}
+.rpm-box{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.rpm-num{font-family:var(--fh);font-size:clamp(32px,9vw,48px);font-weight:900;color:#fff;letter-spacing:.05em}
+.rpm-num small{font-size:16px;color:var(--ac);margin-left:2px}
+.rpm-ticks{display:flex;gap:4px;height:14px;align-items:flex-end}
+.tk-bar{width:6px;height:6px;background:#1c1c20;border-radius:2px;transition:all .12s}
+.tk-bar.on{background:var(--ac);height:14px;box-shadow:0 0 10px var(--ac)}
+#skip{position:absolute;right:22px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:3;background:rgba(255,255,255,.06);border:1px solid #26262a;border-radius:99px;padding:8px 16px;color:var(--mut);font-size:12px;letter-spacing:.08em}
+#intro.open #skip{opacity:0}
+
+/* HERO SAHNESİ */
+.hero{position:relative;height:100svh;min-height:620px;overflow:hidden;display:flex;align-items:flex-end}
+.bg{position:absolute;inset:-6%;background:url(hero.jpg) 50% 35%/cover;transform:scale(1.18);transition:transform 6s cubic-bezier(.16,1,.3,1),filter 1.8s;filter:brightness(.3)}
+.hero.on .bg{transform:scale(1.02);filter:brightness(.88) contrast(1.12)}
+.hero:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 75% 25%,transparent 10%,rgba(4,4,4,.65) 85%),linear-gradient(180deg,rgba(4,4,4,.35),transparent 35%,transparent 48%,var(--bg) 99%)}
+.hud-top{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:20px;right:20px;z-index:3;display:flex;justify-content:space-between;align-items:center;font-family:var(--fh);font-size:11px;letter-spacing:.15em;color:#ccc}
+.live-dot{display:inline-flex;align-items:center;gap:7px;background:rgba(10,10,12,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);padding:6px 12px;border-radius:99px}
+.live-dot i{width:7px;height:7px;border-radius:50%;background:var(--ac);box-shadow:0 0 10px var(--ac);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+.t{position:relative;z-index:2;padding:0 20px 76px;width:100%;max-width:940px;margin:0 auto;opacity:0;transform:translateY(36px);transition:all 1.1s .25s cubic-bezier(.16,1,.3,1)}
+.hero.on .t{opacity:1;transform:none}
+.tag{display:inline-block;background:var(--ac);color:#000;border-radius:6px;padding:5px 12px;font-family:var(--fh);font-size:10px;letter-spacing:.22em;font-weight:900;box-shadow:0 0 18px var(--ac-glow);transition:background .4s,box-shadow .4s}
+.hero h1{font-size:clamp(42px,13.5vw,116px);line-height:.92;margin:14px 0 14px;font-weight:900;letter-spacing:-.01em}
+.hero h1 span{display:block}
+.hero h1 .o{color:transparent;-webkit-text-stroke:2px var(--ac);transition:-webkit-text-stroke .4s}
+.hero h1 .f{color:var(--ac);text-shadow:0 0 42px var(--ac-glow);transition:color .4s,text-shadow .4s}
+.hero p{color:#d8dad0;font-size:16px;margin:0 0 24px;max-width:440px}
+.hero-btns{display:flex;flex-wrap:wrap;gap:12px}
+.cta{display:inline-flex;align-items:center;gap:8px;background:var(--ac);color:#000;text-decoration:none;border-radius:14px;padding:14px 24px;font-family:var(--fh);font-size:13px;font-weight:900;letter-spacing:.08em;border:0;box-shadow:0 0 24px var(--ac-glow);transition:transform .2s,background .4s,box-shadow .4s}
+.cta:active{transform:scale(.96)}
+.cta-sec{display:inline-flex;align-items:center;background:rgba(255,255,255,.07);backdrop-filter:blur(12px);color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px 20px;font-family:var(--fh);font-size:12px;font-weight:700;letter-spacing:.08em}
+
+/* KAYAN ŞERİT */
+.tk{background:var(--ac);color:#000;overflow:hidden;white-space:nowrap;transform:skewY(-2deg);margin:36px 0;padding:12px 0;box-shadow:0 0 30px var(--ac-glow);transition:background .4s}
+.tk div{display:inline-block;font-family:var(--fh);font-weight:900;font-size:16px;letter-spacing:.16em;animation:mq 20s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+section{padding:58px 20px;max-width:940px;margin:0 auto}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;gap:12px}
+h2{font-size:clamp(24px,6.8vw,38px);margin:0;letter-spacing:.06em;font-weight:900}
+h2:before{content:"";display:inline-block;width:8px;height:.85em;background:var(--ac);margin-right:12px;vertical-align:-2px;transform:skewX(-14deg);box-shadow:0 0 16px var(--ac);transition:background .4s}
+.sub{color:var(--mut);margin:6px 0 0;font-size:14px}
+.sec-num{font-family:var(--fh);font-size:13px;color:var(--ac);opacity:.8}
+
+/* ÖZEL KAYDIRMA SAHNELERİ (SCROLL REVEAL) */
+.rv{opacity:0;transform:translateY(48px) scale(.97);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
+
+/* VİDEO SAHNESİ */
+.vw{display:flex;justify-content:center}
+.vc{position:relative;width:min(88vw,360px);aspect-ratio:3/4;border-radius:30px;overflow:hidden;background:#000;border:2px solid var(--bd);box-shadow:0 18px 60px rgba(0,0,0,.85),0 0 35px var(--ac-glow);cursor:pointer;transition:box-shadow .4s}
+.vc video{width:100%;height:100%;object-fit:cover;display:block}
+.sd,.fs{position:absolute;bottom:14px;background:rgba(10,10,12,.78);backdrop-filter:blur(12px);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:9px 16px;font-size:13px;font-weight:600}
+.sd{left:14px}.fs{right:14px}
+
+/* YATAY GALERİ */
+.rail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 20px 20px;margin:0 -20px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.ph{position:relative;flex:none;width:min(80vw,330px);aspect-ratio:4/5;border-radius:26px;overflow:hidden;scroll-snap-align:center;border:1px solid var(--bd);cursor:zoom-in;transition:transform .4s}
+.ph:hover{transform:translateY(-6px)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s}
+.ph:hover img{transform:scale(1.06)}
+.ph:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.92))}
+.ph b{position:absolute;left:18px;bottom:18px;z-index:2;font-family:var(--fh);font-size:16px;letter-spacing:.12em}
+.ph b i{font-style:normal;color:var(--ac);margin-right:8px}
+
+/* TEKNİK VERİLER & GÖSTERGE PANELİ */
+.spec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+@media(min-width:680px){.spec-grid{grid-template-columns:repeat(3,1fr)}}
+.sp-box{background:linear-gradient(160deg,#121215,#09090b);border:1px solid var(--bd);border-radius:22px;padding:18px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s}
+.sp-box:hover{border-color:var(--ac);transform:translateY(-3px)}
+.sp-box .k{font-size:10px;color:var(--mut);letter-spacing:.18em;font-weight:700}
+.sp-box .v{font-family:var(--fh);font-size:clamp(18px,4.5vw,24px);font-weight:900;margin:6px 0 2px;color:#fff}
+.sp-box .v em{font-style:normal;color:var(--ac);font-size:14px}
+.sp-box .d{font-size:12px;color:#777870}
+
+/* GÜNLÜK & YAZI KARTLARI */
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:18px}
+.blog-card{background:linear-gradient(155deg,#111114,#09090b);border:1px solid var(--bd);border-radius:24px;padding:24px;transition:transform .3s,border-color .3s;position:relative}
+.blog-card:hover{transform:translateY(-5px);border-color:var(--ac)}
+.b-tag{display:inline-block;font-family:var(--fh);font-size:10px;color:var(--ac);letter-spacing:.15em;margin-bottom:10px}
+.blog-card h3{margin:0 0 10px;font-size:18px;color:#fff;line-height:1.3}
+.blog-card p{color:var(--mut);font-size:14px;margin:0;line-height:1.6}
+
+/* SEFİR KARTI & MOD DEĞİŞTİRİCİ */
+.cd{background:linear-gradient(145deg,#131317,#08080a);border:1px solid var(--bd);border-radius:28px;padding:28px;position:relative;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.7)}
+.cd:before{content:"";position:absolute;right:-50px;top:-50px;width:220px;height:220px;background:var(--ac);opacity:.09;border-radius:50%;filter:blur(35px);transition:background .4s}
+.cd .k{color:var(--mut);font-size:11px;letter-spacing:.18em;font-weight:700}
+.cd .v{font-family:var(--fh);font-size:23px;font-weight:900;margin:4px 0 18px;letter-spacing:.05em}
+.cd .v em{font-style:normal;color:var(--ac)}
+.mode-bar{display:flex;gap:8px;margin:10px 0 22px;flex-wrap:wrap}
+.m-btn{background:#16161a;border:1px solid var(--bd);color:var(--mut);border-radius:12px;padding:9px 14px;font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:.08em;transition:all .25s}
+.m-btn.act{background:var(--ac);color:#000;border-color:var(--ac);box-shadow:0 0 16px var(--ac-glow)}
+.ed{border:1px solid var(--bd);background:rgba(255,255,255,.06);color:var(--tx);backdrop-filter:blur(10px);border-radius:14px;padding:13px 18px;margin-left:8px;font-size:13px;font-weight:700}
+
+/* LIGHTBOX & MODAL */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:85;display:none;place-items:center;backdrop-filter:blur(10px)}
+#lb.show{display:grid}#lb img{max-width:100%;max-height:100%}
+#lb button{position:absolute;top:50%;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:50%;width:48px;height:48px;font-size:24px}
+#lp{left:16px}#ln{right:16px}
+
+footer{text-align:center;color:var(--mut);padding:46px 20px;font-size:12px;font-family:var(--fh);letter-spacing:.15em}
+
+#sh{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:88;display:none;align-items:flex-end;backdrop-filter:blur(6px)}
+#sh.show{display:flex}
+.pn{background:#111114;width:100%;max-width:520px;margin:0 auto;border-radius:26px 26px 0 0;padding:24px 20px calc(26px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bd)}
+.pn label{display:block;font-size:12px;color:var(--mut);margin:12px 0 6px}
+.pn input{width:100%;background:#070709;color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:14px;font-size:16px;outline:none}
+.pn input:focus{border-color:var(--ac)}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+
+<!-- YENİLİKÇİ HARF ATEŞLEMELİ GİRİŞ EKRANI -->
+<div id="intro">
+  <div class="door top"></div>
+  <div class="door bot"></div>
+  <div class="ign-wrap">
+    <div class="ign-sub">SİSTEM ATEŞLENİYOR</div>
+    <div class="word-row" id="w1"></div>
+    <div class="word-row" id="w2"></div>
+    <div class="rpm-box">
+      <div class="rpm-num"><span id="pc">0</span><small>%</small></div>
+      <div class="rpm-ticks" id="ticks"></div>
+    </div>
+  </div>
+  <button id="skip">ATLA ›</button>
+</div>
+
+<!-- HERO BÖLÜMÜ -->
+<div class="hero" id="hero">
+  <div class="bg" id="bg"></div>
+  <div class="hud-top">
+    <div class="live-dot"><i></i><span id="hud-mode">SPORT MODU</span></div>
+    <div>248.8 CC · İSTANBUL</div>
+  </div>
+  <div class="t">
+    <span class="tag">2 TEKER · 250 · ASFALT</span>
+    <h1><span class="o">DOMİNAR</span><span class="f">SEFİRİ</span></h1>
+    <p>Sarı şimşek. Tek teker. Asfaltın kuralını koyan makine.</p>
+    <div class="hero-btns">
+      <a class="cta" href="#vid">VİDEOYU İZLE ↓</a>
+      <a class="cta-sec" href="#specs">TEKNİK VERİLER</a>
+    </div>
+  </div>
+</div>
+
+<div class="tk"><div id="mq"></div></div>
+
+<!-- 01: VİDEO BÖLÜMÜ -->
+<section id="vid" class="rv">
+  <div class="sec-head">
+    <div><h2>TEK TEKER</h2><p class="sub">Videoya dokun, egzoz sesini aç.</p></div>
+    <span class="sec-num">01 / AKSİYON</span>
+  </div>
+  <div class="vw">
+    <div class="vc" id="vc">
+      <video id="vd" src="video.mov" poster="foto1.jpg" muted loop playsinline preload="auto"></video>
+      <button class="sd" id="sd">🔇 Sesi aç</button>
+      <button class="fs" id="fs">⛶</button>
+    </div>
+  </div>
+</section>
+
+<!-- 02: GALERİ BÖLÜMÜ -->
+<section id="gal" class="rv">
+  <div class="sec-head">
+    <div><h2>KARELER</h2><p class="sub">Sağa sola kaydır, tam ekran için dokun.</p></div>
+    <span class="sec-num">02 / GARAJ</span>
+  </div>
+  <div class="rail" id="rail">
+    <div class="ph"><img src="foto1.jpg" alt="Garajda"><b><i>01</i>GARAJ</b></div>
+    <div class="ph"><img src="foto2.jpg" alt="Yolda"><b><i>02</i>ASFALT</b></div>
+    <div class="ph"><img src="foto3.jpg" alt="Selam"><b><i>03</i>SELAM</b></div>
+    <div class="ph"><img src="foto4.jpg" alt="Havuz başında"><b><i>04</i>MOLA</b></div>
+  </div>
+</section>
+
+<!-- 03: TEKNİK BİLGİLER -->
+<section id="specs" class="rv">
+  <div class="sec-head">
+    <div><h2>MOTOR BİLGİSİ</h2><p class="sub">Dominar 250 sarı şimşeğin mekanik kalbi.</p></div>
+    <span class="sec-num">03 / TEKNİK</span>
+  </div>
+  <div class="spec-grid">
+    <div class="sp-box"><div class="k">MOTOR HACMİ</div><div class="v">248.8 <em>CC</em></div><div class="d">Sıvı Soğutmalı, DOHC</div></div>
+    <div class="sp-box"><div class="k">MAKSİMUM GÜÇ</div><div class="v">27 <em>HP</em></div><div class="d">8500 RPM Devirde</div></div>
+    <div class="sp-box"><div class="k">MAKSİMUM TORK</div><div class="v">23.5 <em>NM</em></div><div class="d">6500 RPM Alt Devir Çekişi</div></div>
+    <div class="sp-box"><div class="k">ŞANZIMAN</div><div class="v">6 <em>VİTES</em></div><div class="d">Kaydırmalı Debriyaj</div></div>
+    <div class="sp-box"><div class="k">ÖN SÜSPANSİYON</div><div class="v">37 <em>MM USD</em></div><div class="d">Ters Teleskopik Çatal</div></div>
+    <div class="sp-box"><div class="k">FREN SİSTEMİ</div><div class="v">DUAL <em>ABS</em></div><div class="d">300mm Ön / 230mm Arka</div></div>
+  </div>
+</section>
+
+<!-- 04: SEFİR GÜNLÜĞÜ / NOTLAR -->
+<section id="blog" class="rv">
+  <div class="sec-head">
+    <div><h2>SEFİR GÜNLÜĞÜ</h2><p class="sub">Asfalt tecrübeleri ve sürüş notları.</p></div>
+    <span class="sec-num">04 / NOTLAR</span>
+  </div>
+  <div class="grid-cards">
+    <div class="blog-card">
+      <span class="b-tag">DENGE & KONTROL</span>
+      <h3>🏍️ Tek Teker Hakimiyeti</h3>
+      <p>Debriyaj kavrama noktası, gaz tepkisi ve her zaman hazır bekleyen arka fren ayağı ile pürüzsüz denge kontrolü.</p>
+    </div>
+    <div class="blog-card">
+      <span class="b-tag">MEKANİK BAKIM</span>
+      <h3>🛠️ Zincir ve Lastik Ayarı</h3>
+      <p>Her 500 km'de bir zincir temizliği, doğru gerginlik ayarı ve viraj tutuşu için ideal soğuk lastik basınçları.</p>
+    </div>
+    <div class="blog-card">
+      <span class="b-tag">GECE SÜRÜŞÜ</span>
+      <h3>🌃 Şehir Işıkları ve Ekipman</h3>
+      <p>Full LED farların gece aydınlatma gücü, vizör seçimi ve trafikte görünür kalmanın altın kuralları.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05: SEFİR KARTI -->
+<section id="sef" class="rv">
+  <div class="sec-head">
+    <div><h2>SEFİR KARTI</h2><p class="sub">Sürüş modunu seç, hesabı takip et.</p></div>
+    <span class="sec-num">05 / KİMLİK</span>
+  </div>
+  <div class="cd">
+    <div class="k">SÜRÜŞ MODU SEÇ</div>
+    <div class="mode-bar">
+      <button class="m-btn act" onclick="setMode('sport',this)">⚡ SARI ŞİMŞEK (SPORT)</button>
+      <button class="m-btn" onclick="setMode('beast',this)">🔥 SEFİR MODU (KIRMIZI)</button>
+    </div>
+    <div class="k">MAKİNE</div><div class="v">DOMİNAR <em>250</em></div>
+    <div class="k">INSTAGRAM</div><div class="v" id="hd">@kullanici_adi</div>
+    <a class="cta" id="fl" href="#" target="_blank" rel="noopener">TAKİP ET →</a>
+    <button class="ed" id="ed">✎ Kullanıcı adı</button>
+  </div>
+</section>
+
+<footer>DOMİNAR SEFİRİ ⚡ ASFALTIN HAKİMİ</footer>
+
+<div id="lb"><button id="lp">‹</button><img id="li" alt=""><button id="ln">›</button></div>
+<div id="sh"><div class="pn"><b>Instagram Hesabı</b><label>Kullanıcı adını yaz (@ olmadan)</label><input id="e0" placeholder="kullanici_adi"><button class="cta" id="sv" style="width:100%;margin-top:16px">KAYDET</button></div></div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+
+// HARF ATEŞLEMELİ YÜKLENME EKRANI KURULUMU
+var word1="DOMİNAR", word2="SEFİRİ";
+var letters=[];
+word1.split("").forEach(function(c){
+  var s=document.createElement("span");s.className="ch wht";s.textContent=c;$("w1").appendChild(s);letters.push(s);
+});
+word2.split("").forEach(function(c){
+  var s=document.createElement("span");s.className="ch";s.textContent=c;$("w2").appendChild(s);letters.push(s);
+});
+var tickBars=[];
+for(var i=0;i<20;i++){
+  var b=document.createElement("span");b.className="tk-bar";$("ticks").appendChild(b);tickBars.push(b);
+}
+
+var fin=false;
+function done(){
+  if(fin)return;fin=true;
+  letters.forEach(function(l){l.classList.add("lit")});
+  tickBars.forEach(function(b){b.classList.add("on")});
+  $("pc").textContent="100";
+  setTimeout(function(){
+    $("intro").classList.add("open");
+    $("hero").classList.add("on");
+  },220);
+}
+
+(function(){
+  var t0=performance.now(), dur=2700;
+  (function step(t){
+    if(fin)return;
+    var p=Math.min(1,(t-t0)/dur);
+    // Hızlanan motor devri eğrisi
+    var ease=p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+    var pct=Math.round(ease*100);
+    $("pc").textContent=pct;
+    
+    var litCount=Math.floor(ease*letters.length);
+    for(var i=0;i<letters.length;i++){
+      if(i<=litCount && pct>2) letters[i].classList.add("lit");
+    }
+    var tickCount=Math.floor(ease*tickBars.length);
+    for(var j=0;j<tickBars.length;j++){
+      if(j<=tickCount && pct>2) tickBars[j].classList.add("on");
+    }
+    if(p<1) requestAnimationFrame(step);
+    else done();
+  })(t0);
+})();
+$("skip").onclick=done;
+
+// SÜRÜŞ MODU DEĞİŞTİRİCİ
+function setMode(m,btn){
+  document.querySelectorAll(".m-btn").forEach(function(b){b.classList.remove("act")});
+  btn.classList.add("act");
+  if(m==="beast"){
+    document.body.classList.add("beast");
+    $("hud-mode").textContent="SEFİR MODU 🔥";
+  }else{
+    document.body.classList.remove("beast");
+    $("hud-mode").textContent="SPORT MODU ⚡";
+  }
+}
+
+// KAYAN ŞERİT
+var w="DOMİNAR SEFİRİ ⚡ 250 CC ⚡ ASFALT ⚡ TEK TEKER ⚡ ";
+$("mq").textContent=w+w+w+w+w+w;
+
+// INSTAGRAM KULLANICI ADI
+var H="";try{H=localStorage.getItem("dh")||""}catch(e){}
+function hnd(){
+  $("hd").textContent=H?"@"+H:"@kullanici_adi";
+  $("fl").href=H?"https://instagram.com/"+encodeURIComponent(H):"#";
+  $("fl").style.display=H?"":"none";
+}hnd();
+$("ed").onclick=function(){$("e0").value=H;$("sh").classList.add("show")};
+$("sv").onclick=function(){H=$("e0").value.replace(/[@\s]/g,"");try{localStorage.setItem("dh",H)}catch(e){}hnd();$("sh").classList.remove("show")};
+$("sh").addEventListener("click",function(e){if(e.target.id==="sh")$("sh").classList.remove("show")});
+
+// KAYDIRMA SAHNE ANİMASYONLARI
+var io=new IntersectionObserver(function(en){
+  en.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})
+},{threshold:.14});
+document.querySelectorAll(".rv").forEach(function(r){io.observe(r)});
+
+// VİDEO KONTROLÜ
+var v=$("vd");function sy(){$("sd").textContent=v.muted?"🔇 Sesi aç":"🔊 Ses açık"}
+new IntersectionObserver(function(en){
+  en.forEach(function(e){
+    if(e.intersectionRatio>.5){var p=v.play();if(p&&p.catch)p.catch(function(){})}
+    else{v.pause();v.muted=true;sy()}
+  })
+},{threshold:[0,.5,1]}).observe(v);
+$("vc").onclick=function(e){
+  if(e.target.id==="fs"){if(v.requestFullscreen)v.requestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();return}
+  v.muted=!v.muted;v.volume=1;var p=v.play();if(p&&p.catch)p.catch(function(){});sy();
+};
+
+// GALERİ TAM EKRAN (LIGHTBOX)
+var ims=[].slice.call(document.querySelectorAll(".ph img")),ci=0;
+function show(i){ci=(i+ims.length)%ims.length;$("li").src=ims[ci].src;$("lb").classList.add("show")}
+ims.forEach(function(m,i){m.parentNode.onclick=function(){show(i)}});
+$("lp").onclick=function(e){e.stopPropagation();show(ci-1)};
+$("ln").onclick=function(e){e.stopPropagation();show(ci+1)};
+$("lb").onclick=function(e){if(e.target.tagName!=="BUTTON")$("lb").classList.remove("show")};
+
+// SCROLL PARALLAX & İLERLEME ÇUBUĞU
+addEventListener("scroll",function(){
+  var h=document.documentElement,y=scrollY;
+  $("pg").style.width=y/(h.scrollHeight-innerHeight)*100+"%";
+  var tt=document.querySelector(".hero .t");
+  if(y<innerHeight)tt.style.translate="0 "+(y*.2)+"px";
+},{passive:true});
+$("hero").addEventListener("pointermove",function(e){
+  $("bg").style.translate=(-(e.clientX/innerWidth-.5)*20)+"px "+(-(e.clientY/innerHeight-.5)*12)+"px";
+});
+</script>
+</body>
+</html>
